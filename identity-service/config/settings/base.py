@@ -1,12 +1,17 @@
 """
 MAIN PROJECT LEVEL SETTINGS
 """
-
+# import environ
 from pathlib import Path
+# BASE_DIR = Path(__file__).resolve().parent.parent.parent
+#
+# env = environ.Env()
+# environ.Env.read_env(BASE_DIR / ".env")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+AUTH_USER_MODEL = "secure_login.CustomUser"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -29,6 +34,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'secure_login',
 ]
 
 MIDDLEWARE = [
@@ -112,3 +118,14 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# REDIS_URL = env("REDIS_URL", default="")
+#
+# if REDIS_URL:
+#     CACHES = {"default": {
+#         "BACKEND": "django.core.cache.backends.redis.RedisCache",
+#         "LOCATION": REDIS_URL,
+#     }}
+# else:
+#     CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}

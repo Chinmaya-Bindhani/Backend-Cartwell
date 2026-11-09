@@ -1,18 +1,18 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser,PermissionsMixin
 from django.contrib.auth.base_user import BaseUserManager
-from datetime import timedelta
-from django.utils import timezone
+
 
 
 
 # CUSTOM USER MANAGER USING BASE_USER_MANAGER FROM AUTH.BASE_USER PRE-MODULE
 class CustomUserManager(BaseUserManager):
-    def create_user(self,email,username,password,**extra_fields):
-        if not email:
-            raise ValueError("email is required")
-        email = self.normalize_email(email)
-        user = self.model(email=email,username=username,**extra_fields)
+    def create_user(self,email,username,password,phone_number=None,**extra_fields):
+        if not email and not phone_number :
+            raise ValueError("email or phone number is required")
+        if email:
+            email = self.normalize_email(email)
+        user = self.model(email=email,username=username,phone_number=phone_number,**extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -26,7 +26,7 @@ class CustomUserManager(BaseUserManager):
 
 #CUSTOM USERMODEL FOR EMAIL AND MOBILE AUTHENTICATIONS
 class CustomUser(AbstractBaseUser,PermissionsMixin):
-    email = models.EmailField(max_length=255, unique=True, verbose_name='Email')
+    email = models.EmailField(max_length=255, unique=True,null=True, verbose_name='Email')
     phone_number = models.CharField(max_length=15, unique=True, null=True, blank=True)
     username = models.CharField(max_length=200)
     first_name = models.CharField(max_length=100)
@@ -34,25 +34,8 @@ class CustomUser(AbstractBaseUser,PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
-    objects = CustomUserManager
-    USERNAME_FIELD = 'email' or 'phone_number'
+    objects = CustomUserManager()
+    USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name','last_name','username']
 
 
-class OTPVerification(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='otps')
-    otp = models.CharField(max_length=6)
-    created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField()
-    is_verified = models.BooleanField(default=False)
-
-    def is_expired(self):
-        return timezone.now() > self.expires_at
-
-    def save(self, *args, **kwargs):
-        if not self.expires_at:
-            self.expires_at = timezone.now() + timedelta(minutes=5)
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"OTP for {self.user.email}"
