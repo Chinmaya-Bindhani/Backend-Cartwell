@@ -14,7 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 AUTH_USER_MODEL = "secure_login.CustomUser"
 
 AUTHENTICATION_BACKENDS = [
-    "secure_login.backends.EmailOrPhoneBackend",
+    "secure_login.auth_backend_mail_num.EmailOrPhoneBackend",
 ]
 
 
