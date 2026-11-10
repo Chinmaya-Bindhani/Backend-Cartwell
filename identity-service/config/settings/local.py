@@ -27,3 +27,5 @@ if REDIS_URL:
     }}
 else:
     CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+
+FAST2SMS_KEY = env("FAST2SMS_KEY", default="")

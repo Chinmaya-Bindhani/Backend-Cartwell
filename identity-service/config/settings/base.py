@@ -13,6 +13,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 AUTH_USER_MODEL = "secure_login.CustomUser"
 
+AUTHENTICATION_BACKENDS = [
+    "secure_login.backends.EmailOrPhoneBackend",
+]
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -35,6 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'secure_login',
+    'rest_framework',
+    'rest_framework_simplejwt',
 ]
 
 MIDDLEWARE = [
@@ -120,12 +127,30 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-# REDIS_URL = env("REDIS_URL", default="")
-#
-# if REDIS_URL:
-#     CACHES = {"default": {
-#         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-#         "LOCATION": REDIS_URL,
-#     }}
-# else:
-#     CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+
+#CONFIGURATIONS FOR TOKEN BASED AUTHENTICATIONS USING JWT TOKEN
+from datetime import timedelta
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    # Define rate limits (e.g., '5/minute', '100/hour', '1000/day')
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '60/minute',
+        'user': '200/minute',
+        'login': '5/minute',      # Strict limit against brute-force login attempts
+        'register': '10/hour',    # Limit spam account creation
+    }
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
