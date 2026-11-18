@@ -1,9 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser,PermissionsMixin
 from django.contrib.auth.base_user import BaseUserManager
-
-
-
+from django.utils import  timezone
 
 # CUSTOM USER MANAGER USING BASE_USER_MANAGER FROM AUTH.BASE_USER PRE-MODULE
 class CustomUserManager(BaseUserManager):
@@ -33,6 +31,7 @@ class CustomUser(AbstractBaseUser,PermissionsMixin):
     last_name = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    date_joined = models.DateTimeField(default=timezone.now)
 
     objects = CustomUserManager()
     USERNAME_FIELD = 'email'

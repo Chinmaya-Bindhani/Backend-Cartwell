@@ -3,6 +3,9 @@ MAIN PROJECT LEVEL SETTINGS
 """
 # import environ
 from pathlib import Path
+
+import rest_framework.permissions
+
 # BASE_DIR = Path(__file__).resolve().parent.parent.parent
 #
 # env = environ.Env()
@@ -134,6 +137,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_PERMISSION_CLASSES':(
+        "rest_framework.permissions.IsAuthenticated"
+    ),
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
@@ -143,14 +149,36 @@ REST_FRAMEWORK = {
         'anon': '60/minute',
         'user': '200/minute',
         'login': '5/minute',      # Strict limit against brute-force login attempts
-        'register': '10/hour',    # Limit spam account creation
+        'register': '10000/hour',    # Limit spam account creation
     }
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    "ALGORITHM": "RS256",
+    "SIGNING_KEY": (BASE_DIR / "keys" / "private.pem").read_text(),
+    "VERIFYING_KEY": (BASE_DIR / "keys" / "public.pem").read_text(),
+    "ISSUER": "identity-service",
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+}
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:9000"
+]
+SIMPLE_JWT = {
+    "ALGORITHM": "RS256",
+    "SIGNING_KEY": (BASE_DIR / "keys" / "private.pem").read_text(),
+    "VERIFYING_KEY": (BASE_DIR / "keys" / "public.pem").read_text(),
+    "ISSUER": "identity-service",
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': False,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:9000"
+]

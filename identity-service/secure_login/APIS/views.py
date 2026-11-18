@@ -31,7 +31,14 @@ class RegisterView(APIView):
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            errors = dict(serializer.errors)
+            data = request.data
+
+            if hasattr(data, "get") and not data.get("email") and not data.get("phone_number"):
+                errors.setdefault("Identifiers", ["Email or phone number is required."])
+
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
         user = serializer.save()
 
         identifier = user.email or user.phone_number
