@@ -8,8 +8,8 @@ from rest_framework.views import APIView
 from .throttle import LoginRateThrottle,RegisterRateThrottle
 from ..models import SellerApplicationModel
 from django.shortcuts import  get_object_or_404
-
-from .serialiser import RegisterSerializer, VerifyOtpSerializer, LoginSerializer,SellerApplicationCreateSerializer,SellerApplicationDetailSerializer
+from .permissions import IsSeller
+from .serialiser import RegisterSerializer, VerifyOtpSerializer, LoginSerializer,SellerApplicationCreateSerializer,SellerApplicationDetailSerializer,SellerApplicationResubmitSerializer
 from ..otp_Service import generate_otp
 
 
@@ -81,7 +81,7 @@ class SellerApplicationCreateView(generics.CreateAPIView):
         return context
 
 
-class MySellerApplicationView(generics.RetrieveAPIView):
+class MySellerApplicationView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = SellerApplicationDetailSerializer
 
@@ -90,3 +90,9 @@ class MySellerApplicationView(generics.RetrieveAPIView):
             SellerApplicationModel,
             user=self.request.user,
         )
+
+    def get_serializer_class(self):
+        if self.request.method in {"PUT", "PATCH"}:
+            return SellerApplicationResubmitSerializer
+
+        return SellerApplicationDetailSerializer

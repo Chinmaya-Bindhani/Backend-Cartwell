@@ -7,6 +7,8 @@ from ..otp_Service import verify_otp
 
 def get_tokens(user):
     refresh = RefreshToken.for_user(user)
+    refresh["role"] = user.role
+    refresh["email"] = user.email
     return {
         "refresh":str(refresh),
         "access":str(refresh.access_token)
@@ -66,7 +68,13 @@ class LoginSerializer(serializers.Serializer):
 class SellerApplicationCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model =SellerApplicationModel
-        fields = "__all__"
+        fields = [
+            "business_name",
+            "business_address",
+            "aadhaar_number",
+            "pan_number",
+            "gstin_number",
+        ]
 
     def validate(self, attrs):
         user = self.context["request"].user
@@ -79,6 +87,7 @@ class SellerApplicationCreateSerializer(serializers.ModelSerializer):
                 "you have already submitted a seller application"
 
             )
+        return attrs
 
     def create(self, validated_data):
         user = self.context['request'].user
@@ -103,8 +112,9 @@ class SellerApplicationDetailSerializer(serializers.ModelSerializer):
             "user_email",
             "business_name",
             "business_address",
-            "tax_identifier",
-            "document_url",
+            "aadhaar_number",
+            "pan_number",
+            "gstin_number",
             "status",
             "reviewed_by_email",
             "reviewed_at",
@@ -113,3 +123,34 @@ class SellerApplicationDetailSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = fields
+
+class SellerApplicationResubmitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SellerApplicationModel
+        fields = [
+            "business_name",
+            "business_address",
+            "aadhaar_number",
+            "pan_number",
+            "gstin_number",
+        ]
+
+    def validate(self, attrs):
+        if self.instance.status != SellerApplicationModel.Status.REJECTED:
+            raise serializers.ValidationError(
+                "Only rejected applications can be corrected and resubmitted."
+            )
+
+        return attrs
+
+    def update(self, instance, validated_data):
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+
+        instance.status = SellerApplicationModel.Status.PENDING
+        instance.rejection_reason = ""
+        instance.reviewed_by = None
+        instance.reviewed_at = None
+        instance.save()
+
+        return instance
