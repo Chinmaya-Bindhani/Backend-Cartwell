@@ -1,14 +1,15 @@
 import requests
 from django.conf import settings
 from django.core.mail import send_mail
-from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework import status,generics
+from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .throttle import LoginRateThrottle,RegisterRateThrottle
-
-
-from .serialiser import RegisterSerializer, VerifyOtpSerializer, LoginSerializer
+from ..models import SellerApplicationModel
+from django.shortcuts import  get_object_or_404
+from .permissions import IsSeller
+from .serialiser import RegisterSerializer, VerifyOtpSerializer, LoginSerializer,SellerApplicationCreateSerializer,SellerApplicationDetailSerializer,SellerApplicationResubmitSerializer
 from ..otp_Service import generate_otp
 
 
@@ -31,7 +32,14 @@ class RegisterView(APIView):
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            errors = dict(serializer.errors)
+            data = request.data
+
+            if hasattr(data, "get") and not data.get("email") and not data.get("phone_number"):
+                errors.setdefault("Identifiers", ["Email or phone number is required."])
+
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
         user = serializer.save()
 
         identifier = user.email or user.phone_number
@@ -62,3 +70,29 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data["tokens"])
+
+class SellerApplicationCreateView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = SellerApplicationCreateSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["request"] = self.request
+        return context
+
+
+class MySellerApplicationView(generics.RetrieveUpdateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = SellerApplicationDetailSerializer
+
+    def get_object(self):
+        return get_object_or_404(
+            SellerApplicationModel,
+            user=self.request.user,
+        )
+
+    def get_serializer_class(self):
+        if self.request.method in {"PUT", "PATCH"}:
+            return SellerApplicationResubmitSerializer
+
+        return SellerApplicationDetailSerializer
