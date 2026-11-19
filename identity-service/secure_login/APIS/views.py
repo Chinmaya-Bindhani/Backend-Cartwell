@@ -1,14 +1,15 @@
 import requests
 from django.conf import settings
 from django.core.mail import send_mail
-from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework import status,generics
+from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .throttle import LoginRateThrottle,RegisterRateThrottle
+from ..models import SellerApplicationModel
+from django.shortcuts import  get_object_or_404
 
-
-from .serialiser import RegisterSerializer, VerifyOtpSerializer, LoginSerializer
+from .serialiser import RegisterSerializer, VerifyOtpSerializer, LoginSerializer,SellerApplicationCreateSerializer,SellerApplicationDetailSerializer
 from ..otp_Service import generate_otp
 
 
@@ -69,3 +70,23 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data["tokens"])
+
+class SellerApplicationCreateView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = SellerApplicationCreateSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["request"] = self.request
+        return context
+
+
+class MySellerApplicationView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = SellerApplicationDetailSerializer
+
+    def get_object(self):
+        return get_object_or_404(
+            SellerApplicationModel,
+            user=self.request.user,
+        )

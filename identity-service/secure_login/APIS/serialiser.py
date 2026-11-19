@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import  RefreshToken
-from ..models import CustomUser
+from ..models import CustomUser,SellerApplicationModel
 from ..otp_Service import verify_otp
 
 
@@ -63,4 +63,53 @@ class LoginSerializer(serializers.Serializer):
         data["tokens"]=get_tokens(user)
         return data
 
+class SellerApplicationCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =SellerApplicationModel
+        fields = "__all__"
 
+    def validate(self, attrs):
+        user = self.context["request"].user
+        if user.role != CustomUser.Role.CUSTOMER:
+            raise serializers.ValidationError(
+                "only existing customers can apply for seller account "
+            )
+        if SellerApplicationModel.objects.filter(user=user).exists():
+            raise serializers.ValidationError(
+                "you have already submitted a seller application"
+
+            )
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        return SellerApplicationModel.objects.create(
+            user = user,
+            **validated_data
+        )
+class SellerApplicationDetailSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(source="user.id", read_only=True)
+    user_email = serializers.EmailField(source="user.email", read_only=True)
+    reviewed_by_email = serializers.EmailField(
+        source="reviewed_by.email",
+        read_only=True,
+        allow_null=True,
+    )
+
+    class Meta:
+        model = SellerApplicationModel
+        fields = [
+            "id",
+            "user_id",
+            "user_email",
+            "business_name",
+            "business_address",
+            "tax_identifier",
+            "document_url",
+            "status",
+            "reviewed_by_email",
+            "reviewed_at",
+            "rejection_reason",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
